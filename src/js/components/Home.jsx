@@ -1,19 +1,79 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const Home = () => {
     const [nuevaTarea, setNuevaTarea] = useState("");
     const [lista, setLista] = useState([]);
+    const usuario = "miguelurrieta"; 
 
-    const manejarAñadir = () => {
-        if (nuevaTarea.trim() !== "") {
-            setLista([...lista, nuevaTarea]);
-            setNuevaTarea("");
+
+    const crearUsuario = async () => {
+        try {
+            await fetch(`https://playground.4geeks.com/todo/users/${usuario}`, {
+                method: "POST" 
+            });
+            obtenerTareas(); 
+        } catch (error) {
+            console.error("Error al crear usuario:", error);
         }
     };
 
-    const eliminarTarea = (indice) => {
-        const nuevaLista = lista.filter((_, i) => i !== indice);
-        setLista(nuevaLista);
+    const obtenerTareas = async () => {
+        try {
+            const response = await fetch(`https://playground.4geeks.com/todo/users/${usuario}`);
+            if (response.ok) {
+                const data = await response.json();
+                setLista(data.todos); 
+            }
+        } catch (error) {
+            console.error("Error obteniendo tareas:", error);
+        }
+    };
+
+    useEffect(() => {
+        crearUsuario();
+    }, []);
+const manejarAñadir = (e) => {
+    if (e && e.key === "Enter" && nuevaTarea.trim() !== "") {
+       
+        const task = {
+            label: nuevaTarea,
+            is_done: false
+        };
+
+        fetch(`https://playground.4geeks.com/todo/todos/${usuario}`, {
+            method: "POST",
+            body: JSON.stringify(task),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        .then(resp => {
+            console.log("Respuesta ok:", resp.ok); 
+            return resp.json();
+        })
+        .then(data => {
+            console.log("Tarea guardada:", data);
+            setNuevaTarea(""); 
+            obtenerTareas();   
+        })
+        .catch(error => {
+            console.error("Error al añadir:", error);
+        });
+    }
+};
+
+
+    const eliminarTarea = async (id) => {
+        try {
+            const response = await fetch(`https://playground.4geeks.com/todo/todos/${id}`, {
+                method: "DELETE"
+            });
+            if (response.ok) {
+                obtenerTareas(); 
+            }
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+        }
     };
 
     return (
@@ -26,17 +86,13 @@ const Home = () => {
 
             <div className="input-group mb-3">
                 <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Escribe una tarea..."
-                    value={nuevaTarea}
-                    onChange={(e) => setNuevaTarea(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            manejarAñadir();
-                        }
-                    }}
-                />
+    type="text"
+    className="form-control"
+    value={nuevaTarea}
+    onChange={(e) => setNuevaTarea(e.target.value)}
+    onKeyDown={(e) => manejarAñadir(e)} 
+    placeholder="¿escribe una tarea?"
+/>
                 <button className="btn btn-primary" onClick={manejarAñadir}>
                     Añadir
                 </button>
@@ -48,12 +104,12 @@ const Home = () => {
                         No hay tareas, agrega alguna...
                     </li>
                 ) : (
-                    lista.map((tarea, indice) => (
-                        <li key={indice} className="list-group-item d-flex justify-content-between align-items-center">
-                            {tarea}
+                    lista.map((tarea) => (
+                        <li key={tarea.id} className="list-group-item d-flex justify-content-between align-items-center">
+                            {tarea.label}
                             <button
                                 className="btn btn-outline-danger btn-sm border-0"
-                                onClick={() => eliminarTarea(indice)}
+                                onClick={() => eliminarTarea(tarea.id)}
                             >
                                 x
                             </button>
