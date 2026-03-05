@@ -48,4 +48,14 @@ input {
     display: block;
 }
 
+.boton-oculto {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.list-group-item:hover .boton-oculto {
+    opacity: 1;
+    visibility: visible;
+}
  

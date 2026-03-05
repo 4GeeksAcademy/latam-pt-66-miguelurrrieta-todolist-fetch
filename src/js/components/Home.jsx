@@ -30,8 +30,26 @@ const Home = () => {
     };
 
     useEffect(() => {
-        crearUsuario();
-    }, []);
+    const cargarDatosIniciales = async () => {
+        try {
+            const resp = await fetch('https://playground.4geeks.com/todo/users/miguelurrieta');
+           
+            if (resp.status === 404) {
+                console.log("Usuario no encontrado, creando...");
+                await crearUsuario();
+            } else if (resp.ok) {
+                const data = await resp.json();
+                setLista(data.todos || []);
+                console.log("Tareas cargadas con éxito");
+            }
+        } catch (error) {
+            console.error("Error en la conexión:", error);
+        }
+    };
+
+    cargarDatosIniciales();
+}, []);
+
 const manejarAñadir = (e) => {
     if (e && e.key === "Enter" && nuevaTarea.trim() !== "") {
        
@@ -76,6 +94,22 @@ const manejarAñadir = (e) => {
         }
     };
 
+const eliminarTodo = async () => {
+    try {
+        const resp = await fetch('https://playground.4geeks.com/todo/users/miguelurrieta', {
+            method: "DELETE"
+        });
+
+        if (resp.ok) {
+            setLista([]); 
+            console.log("Lista reiniciada");
+
+            await crearUsuario();
+        }
+    } catch (error) {
+        console.error("Error al borrar todo:", error);
+    }
+};
     return (
         <div className="container mt-5">
             <h1 className="text-center">Todo List</h1>
@@ -101,22 +135,28 @@ const manejarAñadir = (e) => {
             <ul className="list-group shadow-sm">
                 {lista.length === 0 ? (
                     <li className="list-group-item text-center text-muted">
-                        No hay tareas, agrega alguna...
+                        No hay tareas. Agrega una
                     </li>
                 ) : (
                     lista.map((tarea) => (
                         <li key={tarea.id} className="list-group-item d-flex justify-content-between align-items-center">
                             {tarea.label}
                             <button
-                                className="btn btn-outline-danger btn-sm border-0"
+                                className="btn btn-outline-danger btn-sm border-0 boton-oculto"
                                 onClick={() => eliminarTarea(tarea.id)}
                             >
                                 x
                             </button>
                         </li>
                     ))
-                )}
+                )};
             </ul>
+            <div className="d-flex justify-content-end mt-3">
+                <button
+                className="btn btn-danger btn-sm"
+                onClick={eliminarTodo}>Eliminar Tareas
+                </button>
+                </div>
         </div>
     );
 };
